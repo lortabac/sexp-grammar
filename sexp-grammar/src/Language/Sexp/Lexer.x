@@ -55,7 +55,7 @@ $symsubseq  = [$syminitial \#\'\`\,]
 $whitespace+       ;
 ";" .*             ;
 
-"#;"               { just TokDatumComment }
+"#;"               { just TokDatumCommentIntro }
 
 "("                { just TokLParen   }
 ")"                { just TokRParen   }

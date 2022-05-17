@@ -39,57 +39,57 @@ import Language.Sexp.Types
 %monad { Either String }
 
 %token
-  '('            { _ :< TokLParen       }
-  ')'            { _ :< TokRParen       }
-  '['            { _ :< TokLBracket     }
-  ']'            { _ :< TokRBracket     }
-  '{'            { _ :< TokLBrace       }
-  '}'            { _ :< TokRBrace       }
-  DATUMCOMMENT   { _ :< TokDatumComment }
-  PREFIX         { _ :< (TokPrefix _)   }
-  SYMBOL         { _ :< (TokSymbol _)   }
-  NUMBER         { _ :< (TokNumber _)   }
-  STRING         { _ :< (TokString _)   }
+  '('                   { _ :< TokLParen            }
+  ')'                   { _ :< TokRParen            }
+  '['                   { _ :< TokLBracket          }
+  ']'                   { _ :< TokRBracket          }
+  '{'                   { _ :< TokLBrace            }
+  '}'                   { _ :< TokRBrace            }
+  DATUM_COMMENT_INTRO   { _ :< TokDatumCommentIntro }
+  PREFIX                { _ :< (TokPrefix _)        }
+  SYMBOL                { _ :< (TokSymbol _)        }
+  NUMBER                { _ :< (TokNumber _)        }
+  STRING                { _ :< (TokString _)        }
 
-  EOF            { _ :< TokEOF          }
+  EOF                   { _ :< TokEOF               }
 
 %%
 
 Sexps_ :: { [Sexp] }
-  : Sexps EOF                             { $1 }
+  : Sexps EOF                              { $1 }
 
 Sexps :: { [Sexp] }
-  : list(Sexp)                            { $1 }
+  : list(Sexp)                             { $1 }
 
 Sexp_ :: { Sexp }
-  : Sexp EOF                              { $1 }
+  : Sexp EOF                               { $1 }
 
 -- A core sexp, but possibly surrounded
 -- by datum comments, which are ignored
 Sexp :: { Sexp }
-  : DatumComments CoreSexp DatumComments  { $2 }
+  : DatumComments CoreSexp DatumComments   { $2 }
 
 CoreSexp :: { Sexp }
-  : Atom                                  { AtomF                       @@ $1 }
-  | '(' list(Sexp) ')'                    { const (ParenListF $2)       @@ $1 }
-  | '[' list(Sexp) ']'                    { const (BracketListF $2)     @@ $1 }
-  | '{' list(Sexp) '}'                    { const (BraceListF $2)       @@ $1 }
-  | PREFIX Sexp                           { const (ModifiedF
-                                                    (getPrefix (extract $1))
-                                                    $2)                 @@ $1 }
+  : Atom                                   { AtomF                       @@ $1 }
+  | '(' list(Sexp) ')'                     { const (ParenListF $2)       @@ $1 }
+  | '[' list(Sexp) ']'                     { const (BracketListF $2)     @@ $1 }
+  | '{' list(Sexp) '}'                     { const (BraceListF $2)       @@ $1 }
+  | PREFIX Sexp                            { const (ModifiedF
+                                                     (getPrefix (extract $1))
+                                                     $2)                 @@ $1 }
 
 Atom :: { LocatedBy Position Atom }
-  : NUMBER                                { fmap (AtomNumber . getNumber) $1 }
-  | STRING                                { fmap (AtomString . getString) $1 }
-  | SYMBOL                                { fmap (AtomSymbol . getSymbol) $1 }
+  : NUMBER                                 { fmap (AtomNumber . getNumber) $1 }
+  | STRING                                 { fmap (AtomString . getString) $1 }
+  | SYMBOL                                 { fmap (AtomSymbol . getSymbol) $1 }
 
 DatumComments :: { [Sexp] }
-  : {- empty -}                           { [] }
-  | DatumComment DatumComments            { $1 : $2 }
+  : {- empty -}                            { [] }
+  | DatumComment DatumComments             { $1 : $2 }
 
 
 DatumComment :: { Sexp }
-  : DATUMCOMMENT DatumComments Sexp       { $3 }
+  : DATUM_COMMENT_INTRO DatumComments Sexp { $3 }
 
 -- Utils
 
