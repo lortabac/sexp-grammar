@@ -39,18 +39,19 @@ import Language.Sexp.Types
 %monad { Either String }
 
 %token
-  '('            { _ :< TokLParen     }
-  ')'            { _ :< TokRParen     }
-  '['            { _ :< TokLBracket   }
-  ']'            { _ :< TokRBracket   }
-  '{'            { _ :< TokLBrace     }
-  '}'            { _ :< TokRBrace     }
-  PREFIX         { _ :< (TokPrefix _) }
-  SYMBOL         { _ :< (TokSymbol _) }
-  NUMBER         { _ :< (TokNumber _) }
-  STRING         { _ :< (TokString _) }
+  '('            { _ :< TokLParen       }
+  ')'            { _ :< TokRParen       }
+  '['            { _ :< TokLBracket     }
+  ']'            { _ :< TokRBracket     }
+  '{'            { _ :< TokLBrace       }
+  '}'            { _ :< TokRBrace       }
+  DATUMCOMMENT   { _ :< TokDatumComment }
+  PREFIX         { _ :< (TokPrefix _)   }
+  SYMBOL         { _ :< (TokSymbol _)   }
+  NUMBER         { _ :< (TokNumber _)   }
+  STRING         { _ :< (TokString _)   }
 
-  EOF            { _ :< TokEOF        }
+  EOF            { _ :< TokEOF          }
 
 %%
 
@@ -63,7 +64,12 @@ Sexps :: { [Sexp] }
 Sexp_ :: { Sexp }
   : Sexp EOF                              { $1 }
 
+-- A core sexp, but possibly surrounded
+-- by datum comments, which are ignored
 Sexp :: { Sexp }
+  : DatumComments CoreSexp DatumComments  { $2 }
+
+CoreSexp :: { Sexp }
   : Atom                                  { AtomF                       @@ $1 }
   | '(' list(Sexp) ')'                    { const (ParenListF $2)       @@ $1 }
   | '[' list(Sexp) ']'                    { const (BracketListF $2)     @@ $1 }
@@ -76,6 +82,14 @@ Atom :: { LocatedBy Position Atom }
   : NUMBER                                { fmap (AtomNumber . getNumber) $1 }
   | STRING                                { fmap (AtomString . getString) $1 }
   | SYMBOL                                { fmap (AtomSymbol . getSymbol) $1 }
+
+DatumComments :: { [Sexp] }
+  : {- empty -}                           { [] }
+  | DatumComment DatumComments            { $1 : $2 }
+
+
+DatumComment :: { Sexp }
+  : DATUMCOMMENT DatumComments Sexp       { $3 }
 
 -- Utils
 
